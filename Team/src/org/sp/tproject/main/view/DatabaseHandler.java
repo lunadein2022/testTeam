@@ -47,16 +47,16 @@ public class DatabaseHandler {
     }
     
     public void deleteItem(TodoItem item) throws SQLException {
-        String query = "DELETE FROM todolist WHERE todo = ?"; // Adjust this based on how you're identifying tasks
-        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+        String sql = "DELETE FROM todolist WHERE todo = ?"; // Adjust this based on how you're identifying tasks
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, item.getTask());
             pstmt.executeUpdate();
         }
     }
 
     public void clearItems() throws SQLException {
-        String query = "DELETE FROM todolist";
-        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+        String sql = "DELETE FROM todolist";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.executeUpdate();
         }
     }

@@ -32,6 +32,7 @@ public class TodoList extends JPanel {
     public TodoList() {
         setLayout(new BorderLayout());
         setBackground(Color.LIGHT_GRAY);
+        setPreferredSize(new Dimension(370, 350));
         
         try {
             databaseHandler = new DatabaseHandler();
@@ -49,7 +50,6 @@ public class TodoList extends JPanel {
         list = new JList<>(model);
         list.setCellRenderer(new TodoListRenderer());
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        list.setPreferredSize(new Dimension(370, list.getPreferredSize().height)); // Add this line
         list.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 TodoItem item = list.getSelectedValue();
@@ -64,9 +64,10 @@ public class TodoList extends JPanel {
         });
         
         scrollPane = new JScrollPane(list);
-        scrollPane.setMinimumSize(new Dimension(370, scrollPane.getMinimumSize().height));
-        add(scrollPane, BorderLayout.CENTER);
-        
+        scrollPane.setMinimumSize(new Dimension(370, 350));
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        add(scrollPane, BorderLayout.CENTER);  // Adding the already created scrollPane
         
         inputField = new JTextField();
         addButton = new JButton("Add");
@@ -116,7 +117,6 @@ public class TodoList extends JPanel {
             }
         });
         
-        add(new JScrollPane(list), BorderLayout.CENTER);
         JPanel inputPanel = new JPanel(new BorderLayout());
         inputPanel.add(inputField, BorderLayout.CENTER);
         inputPanel.add(addButton, BorderLayout.EAST);
@@ -129,4 +129,3 @@ public class TodoList extends JPanel {
         add(buttonPanel, BorderLayout.NORTH);
     }
 }
-
