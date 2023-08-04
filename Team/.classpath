@@ -9,5 +9,9 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/TeamProject0807_fork lib"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/TProject lib"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Team"/>
+	<classpathentry kind="lib" path="lib/activation-1.0.2.jar"/>
+	<classpathentry kind="lib" path="lib/javax.mail-1.5.5.jar"/>
+	<classpathentry kind="lib" path="lib/ojdbc6.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
