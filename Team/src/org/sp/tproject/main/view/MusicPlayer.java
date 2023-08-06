@@ -6,6 +6,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Image;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -18,6 +20,8 @@ import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -45,9 +49,10 @@ public class MusicPlayer extends JPanel {
     private JButton playPauseButton, nextButton, previousButton, openFileButton, switchViewButton, switchViewButtonForPlaylist;
     private JFileChooser fileChooser;
     private JPanel controlsPanel, playlistPanel, infoPanel, progressBarPanel;
-    private JList<String> playlist;
+    private JList<File> playlist;
 
     private List<File> songFiles = new ArrayList<>();
+    private DefaultListModel<File> playlistModel;
     private Player player;
     private int currentSongIndex = 0;
 
@@ -68,6 +73,21 @@ public class MusicPlayer extends JPanel {
     private void initComponents() {
         setPreferredSize(new Dimension(370, 350));
         setLayout(new BorderLayout());
+        
+        playlistModel = new DefaultListModel<>();
+        playlist = new JList<>(playlistModel); 
+        playlist.setCellRenderer(new SongCellRenderer());
+        
+        playlist.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    // Double-click detected
+                    currentSongIndex = playlist.getSelectedIndex();
+                    playSong(playlistModel.get(currentSongIndex));
+                }
+            }
+        });
 
         // Initialize Buttons with icons
         openFileButton = createButton("res/img/player/addsong.png");
@@ -110,6 +130,15 @@ public class MusicPlayer extends JPanel {
         previousButton.addActionListener(e -> previousMusic());
         switchViewButton.addActionListener(e -> switchView());
         switchViewButtonForPlaylist.addActionListener(e -> switchView());
+    }
+    
+    class SongCellRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            File songFile = (File) value;
+            String songName = songFile.getName();
+            return super.getListCellRendererComponent(list, songName, index, isSelected, cellHasFocus);
+        }
     }
 
     private JButton createButton(String imagePath) {
@@ -166,10 +195,11 @@ public class MusicPlayer extends JPanel {
     private void setupPlaylistPanel() {
         playlistPanel = new JPanel();
         playlistPanel.setLayout(new BoxLayout(playlistPanel, BoxLayout.PAGE_AXIS));
-        playlist = new JList<>();
+        // playlist가 이미 정의되었으므로 새로운 인스턴스를 생성할 필요가 없습니다.
         playlistPanel.add(new JScrollPane(playlist));
         playlistPanel.add(switchViewButtonForPlaylist);
     }
+
 
     private void setDefaultAlbumCover() {
         // Set a default album cover image when there's no music playing
@@ -188,6 +218,7 @@ public class MusicPlayer extends JPanel {
             for (File file : files) {
                 if (file.getName().endsWith(".mp3")) {
                     songFiles.add(file);
+                    playlistModel.addElement(file); // Add the file to the playlist model
                 }
             }
             if (!songFiles.isEmpty()) {
