@@ -1,366 +1,361 @@
 package org.sp.tproject.main.view;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.Image;
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.imageio.ImageIO;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.DefaultListModel;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSlider;
-import javax.swing.SwingConstants;
 
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.datatype.Artwork;
-
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.Player;
+import javax.imageio.ImageIO;
 
 public class MusicPlayer extends JPanel {
-    // Declare component variables
+    // UI Components
     private JLabel songNameLabel, artistNameLabel, albumCoverLabel;
     private JSlider songProgressBar;
-    private JButton playPauseButton, nextButton, previousButton, openFileButton, switchViewButton, switchViewButtonForPlaylist;
-    private JFileChooser fileChooser;
+    private JButton playPauseButton, nextButton, previousButton, openFileButton, switchViewButton, switchViewButtonForPlaylist, deleteSongButton, deleteAllSongsButton;
     private JPanel controlsPanel, playlistPanel, infoPanel, progressBarPanel;
     private JList<File> playlist;
 
+    // Playlist and player state
     private List<File> songFiles = new ArrayList<>();
     private DefaultListModel<File> playlistModel;
     private Player player;
     private int currentSongIndex = 0;
-
     private boolean isPlayingView = true;
-    private boolean isPlaying = false; // new variable to track play state
+    private boolean isPlaying = false;
     
-    private long pauseLocation;
-    private long totalLength;
-    private int pausedFrame;
-
-
-
+    // Constructor
     public MusicPlayer() {
-        // Initialize GUI components
         initComponents();
     }
 
     private void initComponents() {
+        setupPanelPreferences();
+        initializeUIComponents();
+        setLayouts();
+        setDefaultAlbumCover();
+        registerEventListeners();
+        addComponentsToPanel();
+    }
+
+    private void setupPanelPreferences() {
         setPreferredSize(new Dimension(370, 350));
         setLayout(new BorderLayout());
-        
+    }
+
+    private void initializeUIComponents() {
+        // Initialize playlist model and renderer
         playlistModel = new DefaultListModel<>();
         playlist = new JList<>(playlistModel); 
         playlist.setCellRenderer(new SongCellRenderer());
         
-        playlist.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) {
-                    // Double-click detected
-                    currentSongIndex = playlist.getSelectedIndex();
-                    playSong(playlistModel.get(currentSongIndex));
-                }
-            }
-        });
-
-        // Initialize Buttons with icons
+        // Initialize buttons
         openFileButton = createButton("res/img/player/addsong.png");
         playPauseButton = createButton("res/img/player/play.png");
         nextButton = createButton("res/img/player/next.png");
         previousButton = createButton("res/img/player/prev.png");
         switchViewButton = createButton("res/img/player/playlist.png");
         switchViewButtonForPlaylist = createButton("res/img/player/playlist.png");
+        deleteSongButton = new JButton("Delete Song");
+        deleteAllSongsButton = new JButton("Delete All Songs");
 
+        // Initialize labels
         albumCoverLabel = new JLabel();
         albumCoverLabel.setPreferredSize(new Dimension(220, 200));
+        songNameLabel = createLabel("songTitle");
+        artistNameLabel = createLabel("artist");
 
-        songNameLabel = new JLabel("songTitle", SwingConstants.CENTER);
-        artistNameLabel = new JLabel("artist", SwingConstants.CENTER);
-
+        // Initialize progress bar
         songProgressBar = new JSlider();
-        songProgressBar.setPreferredSize(new Dimension(220, 10));
+        songProgressBar.setPreferredSize(new Dimension(220, 20));
+    }
 
+    private JLabel createLabel(String text) {
+        JLabel label = new JLabel(text, SwingConstants.CENTER);
         Font labelFont = new Font("Font name", Font.BOLD, 10);
-        songNameLabel.setFont(labelFont);
-        artistNameLabel.setFont(labelFont);
-        
-        songNameLabel.setPreferredSize(new Dimension(370, 10));
-        artistNameLabel.setPreferredSize(new Dimension(370, 10));
+        label.setFont(labelFont);
+        label.setPreferredSize(new Dimension(370, 10));
+        return label;
+    }
 
+    private void setLayouts() {
         setupInfoPanel();
         setupControlsPanel();
         setupProgressBarPanel();
         setupPlaylistPanel();
-        setDefaultAlbumCover();
+    }
 
-        add(progressBarPanel, BorderLayout.CENTER); // Move progress bar to CENTER
-        add(infoPanel, BorderLayout.NORTH); // Move info panel to NORTH
-        add(controlsPanel, BorderLayout.SOUTH);
-
-        // Setup Event listeners
+    private void registerEventListeners() {
+        // Event Listeners for Buttons
         openFileButton.addActionListener(e -> openFile());
         playPauseButton.addActionListener(e -> togglePlayPause());
         nextButton.addActionListener(e -> nextMusic());
         previousButton.addActionListener(e -> previousMusic());
         switchViewButton.addActionListener(e -> switchView());
         switchViewButtonForPlaylist.addActionListener(e -> switchView());
+        deleteSongButton.addActionListener(e -> deleteSelectedSong());
+        deleteAllSongsButton.addActionListener(e -> deleteAllSongs());
+
+        // Event Listener for Playlist Double-Click
+        playlist.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    currentSongIndex = playlist.getSelectedIndex();
+                    playSong(playlistModel.get(currentSongIndex));
+                }
+            }
+        });
     }
-    
-    class SongCellRenderer extends DefaultListCellRenderer {
-        @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            File songFile = (File) value;
-            String songName = songFile.getName();
-            return super.getListCellRendererComponent(list, songName, index, isSelected, cellHasFocus);
-        }
+
+    private void addComponentsToPanel() {
+        add(infoPanel, BorderLayout.NORTH);
+        add(progressBarPanel, BorderLayout.CENTER);
+        add(controlsPanel, BorderLayout.SOUTH);
     }
 
     private JButton createButton(String imagePath) {
-        BufferedImage img = null;
         try {
-            img = ImageIO.read(new File(imagePath));
+            BufferedImage img = ImageIO.read(new File(imagePath));
+            Image scaledImage = img.getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+            return new JButton(new ImageIcon(scaledImage));
         } catch (IOException e) {
             e.printStackTrace();
+            return new JButton();
         }
-        Image scaledImage = img.getScaledInstance(30, 30, Image.SCALE_SMOOTH);
-        return new JButton(new ImageIcon(scaledImage));
     }
 
     private void setupInfoPanel() {
-        // Create a panel with BoxLayout for song name and artist name
+        // Setup Song Info Panel
         JPanel songInfoPanel = new JPanel();
         songInfoPanel.setLayout(new BoxLayout(songInfoPanel, BoxLayout.Y_AXIS));
-        songInfoPanel.add(Box.createVerticalGlue()); // Center alignment
+        songInfoPanel.add(Box.createVerticalGlue());
         songNameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         artistNameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         songInfoPanel.add(songNameLabel);
         songInfoPanel.add(artistNameLabel);
         songInfoPanel.add(Box.createVerticalGlue());
 
-        // Use a BorderLayout for the overall info panel
+        // Setup Main Info Panel
         infoPanel = new JPanel(new BorderLayout());
-        infoPanel.add(new JLabel(""), BorderLayout.WEST); // 왼쪽에 빈 레이블을 추가합니다.
-        infoPanel.add(albumCoverLabel, BorderLayout.CENTER); // Move album cover to CENTER
+        infoPanel.add(new JLabel(""), BorderLayout.WEST);
+        infoPanel.add(albumCoverLabel, BorderLayout.CENTER);
         infoPanel.add(songInfoPanel, BorderLayout.SOUTH);
         infoPanel.setPreferredSize(new Dimension(370, 250));
-
-        // 왼쪽 여백을 75 픽셀로 설정합니다.
-        ((BorderLayout)infoPanel.getLayout()).setHgap(97); // Horizontal gap
+        ((BorderLayout)infoPanel.getLayout()).setHgap(94);
     }
 
-    
-
-    private void setupControlsPanel() {        
-        controlsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER)); // FlowLayout을 사용하고 중앙 정렬합니다.
+    private void setupControlsPanel() {
+        controlsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         controlsPanel.add(openFileButton);
         controlsPanel.add(previousButton);
         controlsPanel.add(playPauseButton);
         controlsPanel.add(nextButton);
         controlsPanel.add(switchViewButton);
-        controlsPanel.setPreferredSize(new Dimension(370, 70));
+        
+        controlsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
     }
 
     private void setupProgressBarPanel() {
-        progressBarPanel = new JPanel(new FlowLayout(FlowLayout.CENTER)); // FlowLayout을 사용하고 중앙 정렬합니다.
+        progressBarPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         progressBarPanel.add(songProgressBar);
-        progressBarPanel.setPreferredSize(new Dimension(370, 20));
     }
 
     private void setupPlaylistPanel() {
-        playlistPanel = new JPanel();
-        playlistPanel.setLayout(new BoxLayout(playlistPanel, BoxLayout.PAGE_AXIS));
-        // playlist가 이미 정의되었으므로 새로운 인스턴스를 생성할 필요가 없습니다.
-        playlistPanel.add(new JScrollPane(playlist));
-        playlistPanel.add(switchViewButtonForPlaylist);
+        // Setup Playlist Panel
+        playlistPanel = new JPanel(new BorderLayout());
+        playlistPanel.add(playlist, BorderLayout.CENTER);
+        JPanel playlistControlsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        playlistControlsPanel.add(switchViewButtonForPlaylist);
+        playlistControlsPanel.add(deleteSongButton);
+        playlistControlsPanel.add(deleteAllSongsButton);
+        playlistPanel.add(playlistControlsPanel, BorderLayout.SOUTH);
     }
 
-
     private void setDefaultAlbumCover() {
-        // Set a default album cover image when there's no music playing
-        String imagePath = "res/img/player/defaultcover.png";
-        setImageToLabel(albumCoverLabel, imagePath);
+        setImageToComponent(albumCoverLabel, "res/img/player/defaultcover.png", 200, 200);
+    }
+
+    private void setImageToComponent(JComponent component, String imagePath, int width, int height) {
+        try {
+            BufferedImage img = ImageIO.read(new File(imagePath));
+            Image scaledImage = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            if (component instanceof JButton) {
+                ((JButton) component).setIcon(new ImageIcon(scaledImage));
+            } else if (component instanceof JLabel) {
+                ((JLabel) component).setIcon(new ImageIcon(scaledImage));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void openFile() {
-        if (fileChooser == null) {
-            fileChooser = new JFileChooser();
-            fileChooser.setMultiSelectionEnabled(true);
-        }
-        int result = fileChooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File[] files = fileChooser.getSelectedFiles();
-            for (File file : files) {
-                if (file.getName().endsWith(".mp3")) {
-                    songFiles.add(file);
-                    playlistModel.addElement(file); // Add the file to the playlist model
+        // File Chooser Logic
+        JFileChooser fileChooser = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("MP3 Files", "mp3");
+        fileChooser.setFileFilter(filter);
+        fileChooser.setMultiSelectionEnabled(true); // Enable multiple selection
+        int returnVal = fileChooser.showOpenDialog(this);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            File[] selectedFiles = fileChooser.getSelectedFiles();
+            for (File selectedFile : selectedFiles) {
+                if (player == null) {
+                    playSong(selectedFile);
+                    currentSongIndex = 0;
                 }
-            }
-            if (!songFiles.isEmpty()) {
-                playSong(songFiles.get(currentSongIndex));
+                playlistModel.addElement(selectedFile);
+                songFiles.add(selectedFile);
             }
         }
     }
 
+
     private void playSong(File songFile) {
+        // Stop the previous player if any
+        if (player != null) {
+            player.close();
+        }
+
+        // Start a new player for the selected song
         try {
-            // Use JAudioTagger to read metadata
-            AudioFile audioFile = AudioFileIO.read(songFile);
-            Tag tag = audioFile.getTag();
-            String artist = tag.getFirst(FieldKey.ARTIST);
-            String album = tag.getFirst(FieldKey.ALBUM);
-            String title = tag.getFirst(FieldKey.TITLE);
-
-            // Update song information
-            songNameLabel.setText(title);
-            artistNameLabel.setText(artist);
-
-            // Update album cover if available
-            Artwork artwork = tag.getFirstArtwork();
-            if (artwork != null) {
-                byte[] albumImageData = artwork.getBinaryData();
-                ImageIcon albumCover = new ImageIcon(albumImageData);
-                Image scaledImage = albumCover.getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
-                albumCoverLabel.setIcon(new ImageIcon(scaledImage));
-            } else {
-                setDefaultAlbumCover();
-            }
-
-            // Stop current player if a song is already playing
-            if (player != null) {
-                player.close();
-            }
-
-            // Play the selected song using JLayer
+            FileInputStream fileInputStream = new FileInputStream(songFile);
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+            player = new Player(bufferedInputStream);
+            updateSongInfo(songFile);
             new Thread(() -> {
                 try {
-                    FileInputStream fis1 = new FileInputStream(songFile);
-                    BufferedInputStream bis = new BufferedInputStream(fis1);
-                    player = new Player(bis);
-                    player.play(); // 항상 처음부터 재생
+                    player.play();
+                    if (player.isComplete() && currentSongIndex < songFiles.size() - 1) {
+                        nextMusic();
+                    }
                 } catch (JavaLayerException e) {
-                    e.printStackTrace();
-                } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 }
             }).start();
-
-
-
             isPlaying = true;
-            setImageToButton(playPauseButton, "res/img/player/pause.png");
+            setImageToComponent(playPauseButton, "res/img/player/pause.png", 30, 30);
         } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Cannot play the specified file!");
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Unable to play the selected file.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    private void updateSongInfo(File songFile) {
+        try {
+            AudioFile audioFile = AudioFileIO.read(songFile);
+            Tag tag = audioFile.getTag();
+            String title = tag.getFirst(FieldKey.TITLE);
+            String artist = tag.getFirst(FieldKey.ARTIST);
+            songNameLabel.setText(title.isEmpty() ? "Unknown Title" : title);
+            artistNameLabel.setText(artist.isEmpty() ? "Unknown Artist" : artist);
+            List<Artwork> artworkList = tag.getArtworkList();
+            if (!artworkList.isEmpty()) {
+                byte[] albumImageData = artworkList.get(0).getBinaryData();
+                setImageToComponent(albumCoverLabel, albumImageData, 200, 200);
+            } else {
+                setDefaultAlbumCover();
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error reading tag information!");
+            e.printStackTrace();
+        }
+    }
 
-
+    private void setImageToComponent(JComponent component, byte[] imageData, int width, int height) {
+        Image img = Toolkit.getDefaultToolkit().createImage(imageData);
+        Image scaledImage = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        if (component instanceof JButton) {
+            ((JButton) component).setIcon(new ImageIcon(scaledImage));
+        } else if (component instanceof JLabel) {
+            ((JLabel) component).setIcon(new ImageIcon(scaledImage));
+        }
+    }
 
     private void togglePlayPause() {
-        if (isPlaying) {
-            // Pause the song
-            if (player != null) {
-                pausedFrame = player.getPosition(); // Store the current frame
+        if (player != null) {
+            if (isPlaying) {
                 player.close();
+                isPlaying = false;
+                setImageToComponent(playPauseButton, "res/img/player/play.png", 30, 30);
+            } else {
+                playSong(songFiles.get(currentSongIndex));
             }
-            setImageToButton(playPauseButton, "res/img/player/play.png");
-            isPlaying = false;
         } else {
-            // Resume the song
-            playSong(songFiles.get(currentSongIndex)); // Just call playSong method to handle resuming
-            setImageToButton(playPauseButton, "res/img/player/pause.png");
-            isPlaying = true;
+            JOptionPane.showMessageDialog(null, "No music selected!");
         }
     }
 
-
     private void nextMusic() {
-        if (songFiles.size() > 0) {
-            // Move to the next track
-            currentSongIndex = (currentSongIndex + 1) % songFiles.size();
+        if (currentSongIndex < songFiles.size() - 1) {
+            currentSongIndex++;
             playSong(songFiles.get(currentSongIndex));
         }
-        isPlaying = true;
-        setImageToButton(playPauseButton, "res/img/player/pause.png");
     }
 
     private void previousMusic() {
-        if (songFiles.size() > 0) {
-            // Move to the previous track
-            currentSongIndex = (currentSongIndex - 1 + songFiles.size()) % songFiles.size();
+        if (currentSongIndex > 0) {
+            currentSongIndex--;
             playSong(songFiles.get(currentSongIndex));
         }
-        isPlaying = true;
-        setImageToButton(playPauseButton, "res/img/player/pause.png");
     }
 
-
     private void switchView() {
-        // Switch between playing view and playlist view
+        removeAll();
         if (isPlayingView) {
-            remove(progressBarPanel);
-            remove(infoPanel);
-            remove(controlsPanel);
-            add(playlistPanel);
+            add(playlistPanel, BorderLayout.CENTER);
+            isPlayingView = false;
         } else {
-            remove(playlistPanel);
-            add(progressBarPanel, BorderLayout.NORTH);
-            add(infoPanel, BorderLayout.CENTER);
+            add(infoPanel, BorderLayout.NORTH);
+            add(progressBarPanel, BorderLayout.CENTER);
             add(controlsPanel, BorderLayout.SOUTH);
+            isPlayingView = true;
         }
-        isPlayingView = !isPlayingView;
         revalidate();
         repaint();
     }
 
-    private void setImageToLabel(JLabel label, String imagePath) {
-        // Set image to the specified label
-        try {
-            BufferedImage img = ImageIO.read(new File("res/img/player/defaultcover.png"));
-            Image scaledImage = img.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
-            label.setIcon(new ImageIcon(scaledImage));
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void deleteSelectedSong() {
+        if (!playlist.isSelectionEmpty()) {
+            int selectedIndex = playlist.getSelectedIndex();
+            playlistModel.remove(selectedIndex);
+            songFiles.remove(selectedIndex);
+            if (selectedIndex == currentSongIndex) {
+                player.close();
+                setDefaultAlbumCover();
+            }
         }
     }
 
-    private void setImageToButton(JButton button, String imagePath) {
-        // Set image to the specified button
-        try {
-            BufferedImage img = ImageIO.read(new File(imagePath));
-            Image scaledImage = img.getScaledInstance(30, 30, Image.SCALE_SMOOTH);
-            button.setIcon(new ImageIcon(scaledImage));
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void deleteAllSongs() {
+        playlistModel.clear();
+        songFiles.clear();
+        if (player != null) {
+            player.close();
+            setDefaultAlbumCover();
         }
     }
 
-    
+    // Custom Renderer for JList
+    private class SongCellRenderer extends DefaultListCellRenderer {
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            File file = (File) value;
+            setText(file.getName());
+            return this;
+        }
+    }
 }
