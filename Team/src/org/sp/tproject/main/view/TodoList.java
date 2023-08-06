@@ -12,6 +12,7 @@ import java.sql.SQLException;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -22,24 +23,34 @@ import javax.swing.ListSelectionModel;
 public class TodoList extends JPanel {
     DefaultListModel<TodoItem> model;
     JList<TodoItem> list;
-    JTextField inputField;
-    JButton addButton;
+    JTextField inputField1;
+    JButton addButton1;
     DatabaseHandler databaseHandler;
     JButton deleteButton;
     JButton clearButton;
+    JLabel countLabel;
+    JLabel progressLabel1;
     JScrollPane scrollPane;
 
     public TodoList() {
         setLayout(new BorderLayout());
-        setBackground(Color.LIGHT_GRAY);
+        setBackground(Color.PINK);
         setPreferredSize(new Dimension(370, 350));
         
         try {
             databaseHandler = new DatabaseHandler();
             model = new DefaultListModel<>();
             ResultSet rs = databaseHandler.getItems();
-            while(rs.next()) {
-                TodoItem item = new TodoItem(rs.getString("task"), rs.getInt("complete") == 1);
+            while (rs.next()) {
+                // Adjusting the instantiation of TodoItem with additional fields
+                TodoItem item = new TodoItem(
+                    rs.getInt("yy"),
+                    rs.getInt("mm"),
+                    rs.getInt("dd"),
+                    rs.getString("task"),
+                    rs.getInt("complete") == 1,
+                    rs.getString("client")
+                );
                 model.addElement(item);
             }
         } catch (SQLException e) {
@@ -60,8 +71,12 @@ public class TodoList extends JPanel {
                 } catch (SQLException ex) {
                     ex.printStackTrace();
                 }
+                updateCountAndProgress(); // Update count and progress after item is clicked
             }
         });
+
+        countLabel = new JLabel();
+        progressLabel1 = new JLabel();
         
         scrollPane = new JScrollPane(list);
         scrollPane.setMinimumSize(new Dimension(370, 350));
@@ -69,21 +84,29 @@ public class TodoList extends JPanel {
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         add(scrollPane, BorderLayout.CENTER);  // Adding the already created scrollPane
         
-        inputField = new JTextField();
-        addButton = new JButton("Add");
-        addButton.addActionListener(new ActionListener() {
+        inputField1 = new JTextField();
+        addButton1 = new JButton("Add");
+        addButton1.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String task = inputField.getText();
-                if(!task.isEmpty()){
-                    TodoItem item = new TodoItem(task, false);
+                String task = inputField1.getText();
+                if (!task.isEmpty()) {
+                    // Here you need to gather yy, mm, dd, client information to instantiate the TodoItem
+                    // As an example, I'll use placeholders (you need to replace these with appropriate values)
+                    int yy = 2023; // Placeholder for year
+                    int mm = 8; // Placeholder for month
+                    int dd = 4; // Placeholder for day
+                    String client = "clientID"; // Placeholder for client ID
+
+                    TodoItem item = new TodoItem(yy, mm, dd, task, false, client);
                     model.addElement(item);
                     try {
                         databaseHandler.addItem(item);
                     } catch (SQLException ex) {
                         ex.printStackTrace();
                     }
-                    inputField.setText("");
+                    inputField1.setText("");
+                    updateCountAndProgress(); // Update count and progress after item is added
                 }
             }
         });
@@ -100,6 +123,7 @@ public class TodoList extends JPanel {
                     } catch (SQLException ex) {
                         ex.printStackTrace();
                     }
+                    updateCountAndProgress(); // Update count and progress after item is deleted
                 }
             }
         });
@@ -114,18 +138,43 @@ public class TodoList extends JPanel {
                 } catch (SQLException ex) {
                     ex.printStackTrace();
                 }
+                updateCountAndProgress(); // Update count and progress after items are cleared
             }
         });
         
-        JPanel inputPanel = new JPanel(new BorderLayout());
-        inputPanel.add(inputField, BorderLayout.CENTER);
-        inputPanel.add(addButton, BorderLayout.EAST);
-        add(inputPanel, BorderLayout.SOUTH);
+        JPanel addPanel = new JPanel(new BorderLayout());
+        addPanel.add(inputField1, BorderLayout.CENTER);
+        addPanel.add(addButton1, BorderLayout.EAST);
+
+        JPanel buttonPanel = new JPanel(new BorderLayout());
+        buttonPanel.add(deleteButton, BorderLayout.CENTER);
+        buttonPanel.add(clearButton, BorderLayout.EAST);
         
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(deleteButton);
-        buttonPanel.add(clearButton);
+        JPanel countPanel = new JPanel(new BorderLayout());
+        countPanel.add(countLabel, BorderLayout.CENTER);
+        countPanel.add(progressLabel1, BorderLayout.EAST);
+
         
-        add(buttonPanel, BorderLayout.NORTH);
+        JPanel southPanel = new JPanel(new BorderLayout());
+        southPanel.add(buttonPanel, BorderLayout.NORTH);
+        southPanel.add(addPanel, BorderLayout.CENTER);
+        southPanel.add(countPanel, BorderLayout.SOUTH);
+
+        
+        add(southPanel, BorderLayout.SOUTH);
+
+        updateCountAndProgress();
+    }
+
+
+
+    private void updateCountAndProgress() {
+        int complete = 0, total = model.getSize();
+        for (int i = 0; i < total; i++) {
+            if (model.get(i).isComplete()) complete++;
+        }
+        countLabel.setText(complete + " / " + total);
+        int progress = total == 0 ? 0 : (complete * 100) / total;
+        progressLabel1.setText(progress + "%");
     }
 }

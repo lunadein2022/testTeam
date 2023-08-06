@@ -18,7 +18,7 @@ public class MainPage extends Page{
 	Timer timer; //타이머
 	PomoPan pan; //토마토 판
 	
-    Player mp; // music player
+    MusicPlayer mp; // music player
     TodoList todo; // to-do list
 	
 	public MainPage() {
@@ -30,7 +30,7 @@ public class MainPage extends Page{
 		pan=new PomoPan();
 		timer=new Timer(pan);
 		
-        mp = new Player();
+        mp = new MusicPlayer();
         todo = new TodoList();
 		
 		//스타일
@@ -50,12 +50,15 @@ public class MainPage extends Page{
 		p_east.setBackground(Color.WHITE);
 		p_east.setBorder(new LineBorder(Color.LIGHT_GRAY, 1));
 		
+		
+		p_west.setLayout(new BorderLayout()); 
+		
 		//조립
 		p_east.add(ct); //현재 시간을 오른쪽 영역 상단에 부착
 		p_east.add(pan); //토마토 판을 오른쪽 영역 하단에 부착
 		
         p_west.add(mp, BorderLayout.NORTH);
-        p_west.add(todo, BorderLayout.CENTER);
+        p_west.add(todo, BorderLayout.SOUTH);
 		
 		p_center.add(timer); //타이머를 중앙 상단에 부착
 		

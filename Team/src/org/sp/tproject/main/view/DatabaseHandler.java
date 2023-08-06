@@ -30,26 +30,38 @@ public class DatabaseHandler {
     }
 
     public void addItem(TodoItem item) throws SQLException {
-        String sql = "INSERT INTO todolist (task_idx, todo, complete) VALUES (task_idx.nextval, ?, ?)";
+        String sql = "INSERT INTO todolist (task_idx, yy, mm, dd, todo, complete) VALUES (task_idx.nextval, ?, ?, ?, ?, ?)";
+        //String sql = "INSERT INTO todolist (task_idx, yy, mm, dd, task, complete, client) VALUES (task_idx.nextval, ?, ?, ?, ?, ?, ?)";
         PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setString(1, item.getTask());
-        statement.setInt(2, item.isComplete() ? 1 : 0);
+        statement.setInt(1, item.getYear());
+        statement.setInt(2, item.getMonth());
+        statement.setInt(3, item.getDay());
+        statement.setString(4, item.getTask());
+        statement.setInt(5, item.isComplete() ? 1 : 0);
+        //statement.setString(6, item.getClient());
         statement.executeUpdate();
     }
 
 
     public void updateItem(TodoItem item) throws SQLException {
-        String sql = "UPDATE todolist SET complete = ? WHERE todo = ?";
+        //String sql = "UPDATE todolist SET yy = ?, mm = ?, dd = ?, complete = ? WHERE task = ? AND client = ?";
+        String sql = "UPDATE todolist SET yy = ?, mm = ?, dd = ?, complete = ? WHERE todo = ?";
         PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setInt(1, item.isComplete() ? 1 : 0);
-        statement.setString(2, item.getTask());
+        statement.setInt(1, item.getYear());
+        statement.setInt(2, item.getMonth());
+        statement.setInt(3, item.getDay());
+        statement.setInt(4, item.isComplete() ? 1 : 0);
+        statement.setString(5, item.getTask());
+        //statement.setString(6, item.getClient());
         statement.executeUpdate();
     }
     
     public void deleteItem(TodoItem item) throws SQLException {
-        String sql = "DELETE FROM todolist WHERE todo = ?"; // Adjust this based on how you're identifying tasks
+        //String sql = "DELETE FROM todolist WHERE task = ? AND client = ?";
+        String sql = "DELETE FROM todolist WHERE todo = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, item.getTask());
+            //pstmt.setString(2, item.getClient());
             pstmt.executeUpdate();
         }
     }
