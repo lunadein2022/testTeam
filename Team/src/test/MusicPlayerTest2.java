@@ -1,6 +1,6 @@
+package test;
 
-
-package org.sp.tproject.main.view;
+/*package org.sp.tproject.main.view;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -42,8 +42,6 @@ public class MusicPlayer extends JPanel {
     private long songTotalLength;
     private long songPosition;
     private double totalSongDurationInSeconds;
-    private long pausePosition = 0; // A variable to keep track of the pause position
-
     
     
     // Constructor
@@ -313,22 +311,12 @@ public class MusicPlayer extends JPanel {
 
     private void updateSongInfo(File songFile) {
         try {
-            // Set the song title as the file name
-            String title = songFile.getName();
-            
-            // You might also remove the file extension, if desired
-            int extensionIndex = title.lastIndexOf(".");
-            if (extensionIndex > 0) {
-                title = title.substring(0, extensionIndex);
-            }
-
             AudioFile audioFile = AudioFileIO.read(songFile);
             Tag tag = audioFile.getTag();
+            String title = tag.getFirst(FieldKey.TITLE);
             String artist = tag.getFirst(FieldKey.ARTIST);
-
             songNameLabel.setText(title.isEmpty() ? "Unknown Title" : title);
             artistNameLabel.setText(artist.isEmpty() ? "Unknown Artist" : artist);
-
             List<Artwork> artworkList = tag.getArtworkList();
             if (!artworkList.isEmpty()) {
                 byte[] albumImageData = artworkList.get(0).getBinaryData();
@@ -341,7 +329,6 @@ public class MusicPlayer extends JPanel {
             e.printStackTrace();
         }
     }
-
 
     private void setImageToComponent(JComponent component, byte[] imageData, int width, int height) {
         Image img = Toolkit.getDefaultToolkit().createImage(imageData);
@@ -356,24 +343,16 @@ public class MusicPlayer extends JPanel {
     private void togglePlayPause() {
         if (player != null) {
             if (isPlaying) {
-                try {
-                    pausePosition = songPosition; // 기억할 위치 저장
-                    player.close();
-                    isPlaying = false;
-                    setImageToComponent(playPauseButton, "res/img/player/play.png", 30, 30);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                player.close();
+                isPlaying = false;
+                setImageToComponent(playPauseButton, "res/img/player/play.png", 30, 30);
             } else {
-                seekToPosition(pausePosition); // 저장된 위치로 이동
-                isPlaying = true;
-                setImageToComponent(playPauseButton, "res/img/player/pause.png", 30, 30);
+                playSong(songFiles.get(currentSongIndex));
             }
         } else {
             JOptionPane.showMessageDialog(null, "No music selected!");
         }
     }
-
 
     private void nextMusic() {
         if (currentSongIndex < songFiles.size() - 1) {
@@ -471,3 +450,5 @@ public class MusicPlayer extends JPanel {
         }
     }
 }
+
+*/

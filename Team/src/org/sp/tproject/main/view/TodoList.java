@@ -35,7 +35,7 @@ public class TodoList extends JPanel {
     public TodoList() {
         setLayout(new BorderLayout());
         setBackground(Color.PINK);
-        setPreferredSize(new Dimension(370, 350));
+        setPreferredSize(new Dimension(300, 350));
         
         try {
             databaseHandler = new DatabaseHandler();
@@ -79,7 +79,7 @@ public class TodoList extends JPanel {
         progressLabel1 = new JLabel();
         
         scrollPane = new JScrollPane(list);
-        scrollPane.setMinimumSize(new Dimension(370, 350));
+        scrollPane.setMinimumSize(new Dimension(250, 350));
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         add(scrollPane, BorderLayout.CENTER);  // Adding the already created scrollPane
